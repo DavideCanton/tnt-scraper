@@ -1,0 +1,8 @@
+[package]
+name = "tnt-scraper-lib"
+version = "0.1.0"
+authors = ["Davide Canton <davide.canton5@gmail.com>"]
+
+[dependencies]
+reqwest = "*"
+scraper = "*"

@@ -1,0 +1,10 @@
+[package]
+name = "tnt-scraper"
+version = "0.1.0"
+authors = ["Davide Canton <davide.canton5@gmail.com>"]
+
+[dependencies]
+tnt-scraper-lib = { path = "tnt-scraper-lib" }
+clap = "*"
+
+[workspace]
