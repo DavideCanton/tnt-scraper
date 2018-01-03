@@ -1,3 +1,6 @@
+extern crate reqwest;
+extern crate hyper;
+
 mod downloader;
 mod scraper;
 mod selector_cache;
@@ -5,6 +8,17 @@ mod selector_cache;
 use std::env::home_dir;
 use std::fmt::{Display, Formatter, Result as FResult};
 use std::collections::HashSet;
+use std::io;
+
+#[derive(Debug)]
+pub enum Error {
+    DownloadError(reqwest::Error),
+    HyperError(hyper::Error),
+    ScrapeError(String),
+    ParseError(String),
+    GenericError(String),
+    IOError(io::Error)
+}
 
 #[derive(Debug, PartialEq, Clone, Copy, Eq, Hash, PartialOrd, Ord)]
 #[repr(u8)]
@@ -113,7 +127,8 @@ impl TntResult {
 
 const URL: &'static str = "http://www.tntvillage.scambioetico.org/src/releaselist.php";
 
-pub type ScrapeResult = Result<TntResult, String>;
+pub type Result<T> = std::result::Result<T, Error>;
+pub type ScrapeResult = Result<TntResult>;
 
 #[derive(Debug)]
 pub struct RequestData {
@@ -140,7 +155,7 @@ pub fn extract_results(query_data: &RequestData) -> ScrapeResult {
     Ok(entries)
 }
 
-pub fn download_file(entry: &TntEntry) -> Result<(), String> {
+pub fn download_file(entry: &TntEntry) -> Result<()> {
     let mut path = home_dir().unwrap();
     path.push("Downloads");
     downloader::download_file(&path, &entry.download_link)

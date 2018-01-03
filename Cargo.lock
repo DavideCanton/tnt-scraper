@@ -879,6 +879,7 @@ dependencies = [
 name = "tnt-scraper-lib"
 version = "0.1.0"
 dependencies = [
+ "hyper 0.11.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "reqwest 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "scraper 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

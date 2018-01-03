@@ -6,3 +6,4 @@ authors = ["Davide Canton <davide.canton5@gmail.com>"]
 [dependencies]
 reqwest = "*"
 scraper = "*"
+hyper = "*"

@@ -3,8 +3,10 @@ extern crate scraper;
 use self::scraper::{Html, ElementRef};
 use selector_cache::SelectorCache;
 use ScrapeResult;
+use Result;
 use TntEntry;
 use TntResult;
+use Error;
 
 /*
 <tr>
@@ -33,8 +35,10 @@ use TntResult;
 */
 
 
-fn extract_desc(elements: &[ElementRef], _cache: &SelectorCache) -> Result<String, String> {
-    let desc_td: &ElementRef = elements.get(6).ok_or("6 not found".to_owned())?;
+fn extract_desc(elements: &[ElementRef], _cache: &SelectorCache) -> Result<String> {
+    let desc_td: &ElementRef = elements
+        .get(6)
+        .ok_or(Error::ParseError("6 not found".to_owned()))?;
 
     Ok(desc_td
         .text()
@@ -42,19 +46,21 @@ fn extract_desc(elements: &[ElementRef], _cache: &SelectorCache) -> Result<Strin
         .join(" "))
 }
 
-fn extract_torrent(elements: &[ElementRef], cache: &SelectorCache) -> Result<String, String> {
-    let torrent_td: &ElementRef = elements.get(0).ok_or("0 not found".to_owned())?;
+fn extract_torrent(elements: &[ElementRef], cache: &SelectorCache) -> Result<String> {
+    let torrent_td: &ElementRef = elements
+        .get(0)
+        .ok_or(Error::ParseError("0 not found".to_owned()))?;
 
     Ok(torrent_td
         .select(&cache.add_and_get_selector("a"))
         .nth(0)
-        .ok_or("a not found".to_owned())?
+        .ok_or(Error::ParseError("a not found".to_owned()))?
         .value()
         .attr("href")
         .map_or("".to_owned(), |v| v.to_owned()))
 }
 
-fn build_entry(el: &ElementRef, i: usize, cache: &SelectorCache) -> Result<TntEntry, String> {
+fn build_entry(el: &ElementRef, i: usize, cache: &SelectorCache) -> Result<TntEntry> {
     let tds = {
         let td_sel = cache.add_and_get_selector("td");
         el.select(&td_sel).collect::<Vec<_>>()

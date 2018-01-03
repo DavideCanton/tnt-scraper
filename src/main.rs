@@ -114,7 +114,7 @@ fn start_scrape(query: String, category: u8, page: u8) {
                     if let Some(index) = ask_index() {
                         match download_file(&v.entries[index as usize]) {
                             Ok(_) => println!("Download completed!"),
-                            Err(e) => eprintln!("{}", e)
+                            Err(e) => eprintln!("{:?}", e)
                         }
                     }
                 }
@@ -122,7 +122,7 @@ fn start_scrape(query: String, category: u8, page: u8) {
                 start_scrape(query, category, page);
             }
         }
-        Err(e) => eprintln!("Error while scraping: {}", e)
+        Err(e) => eprintln!("Error while scraping: {:?}", e)
     }
 }
 
