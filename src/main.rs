@@ -5,9 +5,9 @@ use std::io;
 use std::io::prelude::*;
 use tnt_scraper_lib::{extract_results, download_file, TntResult, RequestData, TntCategory};
 
-fn print_values(results: &TntResult) {
-    println!("Found {} pages.", results.npages);
-    println!("Found {} results.", results.entries.len());
+fn print_values(results: &TntResult, page: u8) {
+    println!("Pagina corrente: [{}]/[{}]", page, results.npages);
+    println!("Trovati {} risultati.", results.entries.len());
 
     for entry in &results.entries {
         println!("{}", entry);
@@ -47,14 +47,17 @@ fn read_int<F: Fn(u8) -> bool>(s: &str, f: F) -> Option<u8> {
     }
 }
 
-fn loop_read_int<F: Fn(u8) -> bool>(prompt: &str, pred: F, cont: bool) -> Option<u8> {
+fn loop_read_int<F: Fn(u8) -> bool>(prompt: &str, pred: F, cont: bool, err: &str) -> Option<u8> {
     loop {
-        let buf = read_string(prompt).expect("Read error");
+        let buf = read_string(prompt).expect("Errore di lettura");
 
         if let Some(v) = read_int(&buf, &pred) {
             return Some(v);
-        } else if !cont {
-            break;
+        } else {
+            println!("Errore: {}", err);
+            if !cont {
+                break;
+            }
         }
     }
 
@@ -66,11 +69,18 @@ fn ask_category() -> u8 {
         println!("[{}] {}", val.value(), val.to_string());
     }
 
-    loop_read_int("Seleziona un valore>", |v| TntCategory::is_valid_value(v), true).unwrap()
+    loop_read_int("Seleziona un valore>",
+                  |v| TntCategory::is_valid_value(v),
+                  true,
+                  "Categoria non valida!")
+        .unwrap()
 }
 
 fn ask_page(max_pages: u8) -> u8 {
-    loop_read_int("Pagina da richiedere>", |v| v <= max_pages, true).unwrap()
+    loop_read_int("Pagina da richiedere>",
+                  |v| v <= max_pages,
+                  true,
+                  "Numero di pagina non valido!").unwrap()
 }
 
 fn read_string(prompt: &str) -> io::Result<String> {
@@ -85,44 +95,55 @@ fn read_string(prompt: &str) -> io::Result<String> {
 }
 
 fn ask_query() -> String {
-    read_string("Input>").expect("Read error")
+    read_string("Input>").expect("Errore di lettura")
 }
 
 fn ask_index() -> Option<u8> {
-    loop_read_int("File da scaricare>", |_| true, false)
+    loop_read_int("File da scaricare>",
+                  |_| true,
+                  false,
+                  "Indice file non valido!")
 }
 
 fn want_download() -> bool {
     let val = read_string("Vuoi scaricare un file (S/N)>")
-        .expect("Read error")
+        .expect("Errore di lettura")
         .trim()
         .to_lowercase();
 
     val == "s"
 }
 
-fn start_scrape(query: String, category: u8, page: u8) {
-    let data = RequestData::new(&query, category.into(), page);
+fn download_loop(v: &TntResult) {
+    while want_download() {
+        if let Some(index) = ask_index() {
+            match download_file(&v.entries[index as usize]) {
+                Ok(_) => println!("Download completato!"),
+                Err(e) => eprintln!("{:?}", e)
+            }
+        }
+    }
+}
+
+fn start_scrape(query: &str, category: u8, page: u8) -> Option<u8> {
+    let data = RequestData::new(query, category.into(), page);
 
     let results = extract_results(&data);
 
     match results {
         Ok(v) => {
-            print_values(&v);
+            print_values(&v, page);
             if v.entries.len() > 0 {
-                while want_download() {
-                    if let Some(index) = ask_index() {
-                        match download_file(&v.entries[index as usize]) {
-                            Ok(_) => println!("Download completed!"),
-                            Err(e) => eprintln!("{:?}", e)
-                        }
-                    }
-                }
-                let page = ask_page(v.npages);
-                start_scrape(query, category, page);
+                download_loop(&v);
+                Some(ask_page(v.npages))
+            } else {
+                None
             }
         }
-        Err(e) => eprintln!("Error while scraping: {:?}", e)
+        Err(e) => {
+            eprintln!("Errore durante lo scraping: {:?}", e);
+            None
+        }
     }
 }
 
@@ -149,5 +170,9 @@ fn main() {
         .parse::<u8>()
         .unwrap();
 
-    start_scrape(query, category, page);
+    let mut current_page = page;
+
+    while let Some(c) = start_scrape(&query, category, current_page) {
+        current_page = c;
+    }
 }
