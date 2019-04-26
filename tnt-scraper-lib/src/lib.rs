@@ -1,13 +1,14 @@
-extern crate reqwest;
+extern crate dirs;
 extern crate hyper;
+extern crate reqwest;
 
 mod downloader;
 mod scraper;
 mod selector_cache;
 
-use std::env::home_dir;
-use std::fmt::{Display, Formatter, Result as FResult};
+use dirs::home_dir;
 use std::collections::HashSet;
+use std::fmt::{Display, Formatter, Result as FResult};
 use std::io;
 
 #[derive(Debug)]
@@ -17,7 +18,7 @@ pub enum Error {
     ScrapeError(String),
     ParseError(String),
     GenericError(String),
-    IOError(io::Error)
+    IOError(io::Error),
 }
 
 #[derive(Debug, PartialEq, Clone, Copy, Eq, Hash, PartialOrd, Ord)]
@@ -118,10 +119,7 @@ pub struct TntResult {
 
 impl TntResult {
     pub fn new(entries: Vec<TntEntry>, npages: u8) -> Self {
-        TntResult {
-            entries,
-            npages,
-        }
+        TntResult { entries, npages }
     }
 }
 
@@ -146,7 +144,6 @@ impl RequestData {
         }
     }
 }
-
 
 pub fn extract_results(query_data: &RequestData) -> ScrapeResult {
     let html_result = downloader::request_content(URL, &query_data)?;

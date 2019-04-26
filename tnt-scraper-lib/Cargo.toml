@@ -7,3 +7,4 @@ authors = ["Davide Canton <davide.canton5@gmail.com>"]
 reqwest = "*"
 scraper = "*"
 hyper = "*"
+dirs = "*"
