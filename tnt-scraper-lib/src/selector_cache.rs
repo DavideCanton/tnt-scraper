@@ -1,17 +1,15 @@
-extern crate scraper;
-
-use self::scraper::Selector;
-use std::collections::HashMap;
+use scraper::Selector;
 use std::cell::RefCell;
+use std::collections::HashMap;
 
 pub struct SelectorCache {
-    cache: RefCell<HashMap<String, Selector>>
+    cache: RefCell<HashMap<String, Selector>>,
 }
 
 impl SelectorCache {
     pub fn new() -> SelectorCache {
         SelectorCache {
-            cache: RefCell::new(HashMap::new())
+            cache: RefCell::new(HashMap::new()),
         }
     }
 

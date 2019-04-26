@@ -1,10 +1,6 @@
-extern crate dirs;
-extern crate hyper;
-extern crate reqwest;
-
 mod downloader;
-mod scraper;
 mod selector_cache;
+mod tnt_scraper;
 
 use dirs::home_dir;
 use std::collections::HashSet;
@@ -147,7 +143,7 @@ impl RequestData {
 
 pub fn extract_results(query_data: &RequestData) -> ScrapeResult {
     let html_result = downloader::request_content(URL, &query_data)?;
-    let entries = scraper::scrape(&html_result)?;
+    let entries = tnt_scraper::scrape(&html_result)?;
 
     Ok(entries)
 }

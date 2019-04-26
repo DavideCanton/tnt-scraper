@@ -1,13 +1,6 @@
-extern crate scraper;
-
-use self::scraper::{Html, ElementRef};
-use selector_cache::SelectorCache;
-use ScrapeResult;
-use Result;
-use TntEntry;
-use TntResult;
-use Error;
-
+use crate::selector_cache::SelectorCache;
+use crate::{Error, Result, ScrapeResult, TntEntry, TntResult};
+use scraper::{ElementRef, Html};
 /*
 <tr>
             <td>
@@ -34,16 +27,12 @@ use Error;
         </tr>
 */
 
-
 fn extract_desc(elements: &[ElementRef], _cache: &SelectorCache) -> Result<String> {
     let desc_td: &ElementRef = elements
         .get(6)
         .ok_or(Error::ParseError("6 not found".to_owned()))?;
 
-    Ok(desc_td
-        .text()
-        .collect::<Vec<_>>()
-        .join(" "))
+    Ok(desc_td.text().collect::<Vec<_>>().join(" "))
 }
 
 fn extract_torrent(elements: &[ElementRef], cache: &SelectorCache) -> Result<String> {
@@ -85,20 +74,20 @@ pub fn scrape(html_result: &str) -> ScrapeResult {
         let selector = selector_cache.add_and_get_selector("tr");
 
         doc.select(&selector)
-           .enumerate()
-           .skip(1)
-           .filter_map(|(i, el)| build_entry(&el, i, &selector_cache).ok())
-           .collect()
+            .enumerate()
+            .skip(1)
+            .filter_map(|(i, el)| build_entry(&el, i, &selector_cache).ok())
+            .collect()
     };
 
     let npages = {
         let page_selector = selector_cache.add_and_get_selector(".total");
 
         doc.select(&page_selector)
-           .nth(0)
-           .and_then(|e| e.value().attr("a"))
-           .and_then(|v| v.parse::<u8>().ok())
-           .unwrap_or(1)
+            .nth(0)
+            .and_then(|e| e.value().attr("a"))
+            .and_then(|v| v.parse::<u8>().ok())
+            .unwrap_or(1)
     };
 
     Ok(TntResult::new(res, npages))

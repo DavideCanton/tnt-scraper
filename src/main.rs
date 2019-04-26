@@ -1,5 +1,4 @@
 extern crate tnt_scraper_lib;
-extern crate clap;
 
 use std::io;
 use std::io::prelude::*;
