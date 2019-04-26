@@ -1,8 +1,6 @@
-use crate::{RequestData,Result,Error};
+use crate::{Error, RequestData, Result};
 use reqwest::header::{ContentDisposition, ContentLength, DispositionParam, Header, Headers, Raw};
-use std::collections::HashMap;
-use std::fs::File;
-use std::path::PathBuf;
+use std::{collections::HashMap, fs::File, path::PathBuf};
 
 pub fn request_content(url: &str, data: &RequestData) -> Result<String> {
     let client = reqwest::Client::new();
@@ -28,31 +26,27 @@ pub fn request_content(url: &str, data: &RequestData) -> Result<String> {
 }
 
 fn fix_headers(headers: &mut Headers) -> Result<()> {
-    let (cl, cd) = {
-        let header = headers
-            .iter()
-            .find(|h| h.name() == ContentDisposition::header_name())
-            .ok_or(Error::GenericError("Header CD not found".to_owned()))?;
+    let header = headers
+        .iter()
+        .find(|h| h.name() == ContentDisposition::header_name())
+        .ok_or(Error::GenericError("Header CD not found".to_owned()))?;
 
-        let raw = String::from_utf8_lossy(
-            header
-                .raw()
-                .one()
-                .ok_or(Error::GenericError("raw not parsed".to_owned()))?,
-        );
+    let raw = String::from_utf8_lossy(
+        header
+            .raw()
+            .one()
+            .ok_or(Error::GenericError("raw not parsed".to_owned()))?,
+    );
 
-        let (cd_s, cl_s) = raw.split_at(raw.find("Content-Length:").unwrap());
+    let (cd_s, cl_s) = raw.split_at(raw.find("Content-Length:").unwrap());
 
-        let cd_s = cd_s.trim().trim_matches(';');
-        let cl_s = cl_s.trim().trim_matches('"').split_at(15).1;
+    let cd_s = cd_s.trim().trim_matches(';');
+    let cl_s = cl_s.trim().trim_matches('"').split_at(15).1;
 
-        let cl = ContentLength::parse_header(&Raw::from(cl_s)).map_err(|e| Error::HyperError(e))?;
+    let cl = ContentLength::parse_header(&Raw::from(cl_s)).map_err(|e| Error::HyperError(e))?;
 
-        let cd =
-            ContentDisposition::parse_header(&Raw::from(cd_s)).map_err(|e| Error::HyperError(e))?;
-
-        (cl, cd)
-    };
+    let cd =
+        ContentDisposition::parse_header(&Raw::from(cd_s)).map_err(|e| Error::HyperError(e))?;
 
     headers.set(cl);
     headers.set(cd);

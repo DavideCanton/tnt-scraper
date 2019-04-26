@@ -1,6 +1,5 @@
 use scraper::Selector;
-use std::cell::RefCell;
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap};
 
 pub struct SelectorCache {
     cache: RefCell<HashMap<String, Selector>>,

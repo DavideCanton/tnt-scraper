@@ -1,8 +1,7 @@
 extern crate tnt_scraper_lib;
 
-use std::io;
-use std::io::prelude::*;
-use tnt_scraper_lib::{extract_results, download_file, TntResult, RequestData, TntCategory};
+use std::{io, io::prelude::*};
+use tnt_scraper_lib::{download_file, extract_results, RequestData, TntCategory, TntResult};
 
 fn print_values(results: &TntResult, page: u8) {
     println!("Pagina corrente: [{}]/[{}]", page, results.npages);
@@ -31,18 +30,14 @@ fn get_args() -> clap::ArgMatches<'static> {
                 .default_value("1")
                 .help("page"),
         )
-        .arg(
-            clap::Arg::with_name("QUERY")
-                .help("Query")
-                .index(1),
-        )
+        .arg(clap::Arg::with_name("QUERY").help("Query").index(1))
         .get_matches()
 }
 
 fn read_int<F: Fn(u8) -> bool>(s: &str, f: F) -> Option<u8> {
     match s.trim().parse::<u8>() {
         Ok(value) if f(value) => Some(value),
-        _ => None
+        _ => None,
     }
 }
 
@@ -68,18 +63,23 @@ fn ask_category() -> u8 {
         println!("[{}] {}", val.value(), val.to_string());
     }
 
-    loop_read_int("Seleziona un valore>",
-                  |v| TntCategory::is_valid_value(v),
-                  true,
-                  "Categoria non valida!")
-        .unwrap()
+    loop_read_int(
+        "Seleziona un valore>",
+        |v| TntCategory::is_valid_value(v),
+        true,
+        "Categoria non valida!",
+    )
+    .unwrap()
 }
 
 fn ask_page(max_pages: u8) -> u8 {
-    loop_read_int("Pagina da richiedere>",
-                  |v| v <= max_pages,
-                  true,
-                  "Numero di pagina non valido!").unwrap()
+    loop_read_int(
+        "Pagina da richiedere>",
+        |v| v <= max_pages,
+        true,
+        "Numero di pagina non valido!",
+    )
+    .unwrap()
 }
 
 fn read_string(prompt: &str) -> io::Result<String> {
@@ -98,10 +98,12 @@ fn ask_query() -> String {
 }
 
 fn ask_index() -> Option<u8> {
-    loop_read_int("File da scaricare>",
-                  |_| true,
-                  false,
-                  "Indice file non valido!")
+    loop_read_int(
+        "File da scaricare>",
+        |_| true,
+        false,
+        "Indice file non valido!",
+    )
 }
 
 fn want_download() -> bool {
@@ -118,14 +120,14 @@ fn download_loop(v: &TntResult) {
         if let Some(index) = ask_index() {
             match download_file(&v.entries[index as usize]) {
                 Ok(_) => println!("Download completato!"),
-                Err(e) => eprintln!("{:?}", e)
+                Err(e) => eprintln!("{:?}", e),
             }
         }
     }
 }
 
 fn start_scrape(query: &str, category: u8, page: u8) -> Option<u8> {
-    let data = RequestData::new(query, category.into(), page);
+    let data = RequestData::new(query, category, page);
 
     let results = extract_results(&data);
 
@@ -163,11 +165,7 @@ fn main() {
         .parse::<u8>()
         .unwrap();
 
-    let page = args
-        .value_of("pages")
-        .unwrap()
-        .parse::<u8>()
-        .unwrap();
+    let page = args.value_of("pages").unwrap().parse::<u8>().unwrap();
 
     let mut current_page = page;
 

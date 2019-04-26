@@ -3,9 +3,11 @@ mod selector_cache;
 mod tnt_scraper;
 
 use dirs::home_dir;
-use std::collections::HashSet;
-use std::fmt::{Display, Formatter, Result as FResult};
-use std::io;
+use std::{
+    collections::HashSet,
+    fmt::{Display, Formatter, Result as FResult},
+    io,
+};
 
 #[derive(Debug)]
 pub enum Error {
@@ -119,7 +121,7 @@ impl TntResult {
     }
 }
 
-const URL: &'static str = "http://www.tntvillage.scambioetico.org/src/releaselist.php";
+const URL: &str = "http://www.tntvillage.scambioetico.org/src/releaselist.php";
 
 pub type Result<T> = std::result::Result<T, Error>;
 pub type ScrapeResult = Result<TntResult>;
@@ -132,9 +134,9 @@ pub struct RequestData {
 }
 
 impl RequestData {
-    pub fn new(query: &str, cat: TntCategory, page: u8) -> Self {
+    pub fn new<C: Into<TntCategory>>(query: &str, cat: C, page: u8) -> Self {
         RequestData {
-            cat,
+            cat: cat.into(),
             page,
             srcrel: query.to_owned(),
         }

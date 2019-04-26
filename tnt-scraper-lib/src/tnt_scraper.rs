@@ -1,5 +1,4 @@
-use crate::selector_cache::SelectorCache;
-use crate::{Error, Result, ScrapeResult, TntEntry, TntResult};
+use crate::{selector_cache::SelectorCache, Error, Result, ScrapeResult, TntEntry, TntResult};
 use scraper::{ElementRef, Html};
 /*
 <tr>
@@ -32,7 +31,9 @@ fn extract_desc(elements: &[ElementRef], _cache: &SelectorCache) -> Result<Strin
         .get(6)
         .ok_or(Error::ParseError("6 not found".to_owned()))?;
 
-    Ok(desc_td.text().collect::<Vec<_>>().join(" "))
+    let res = desc_td.text().collect::<Vec<_>>().join(" ");
+
+    Ok(res)
 }
 
 fn extract_torrent(elements: &[ElementRef], cache: &SelectorCache) -> Result<String> {
@@ -40,22 +41,22 @@ fn extract_torrent(elements: &[ElementRef], cache: &SelectorCache) -> Result<Str
         .get(0)
         .ok_or(Error::ParseError("0 not found".to_owned()))?;
 
-    Ok(torrent_td
+    let res = torrent_td
         .select(&cache.add_and_get_selector("a"))
         .nth(0)
         .ok_or(Error::ParseError("a not found".to_owned()))?
         .value()
         .attr("href")
-        .map_or("".to_owned(), |v| v.to_owned()))
+        .map_or("".to_owned(), |v| v.to_owned());
+
+    Ok(res)
 }
 
 fn build_entry(el: &ElementRef, i: usize, cache: &SelectorCache) -> Result<TntEntry> {
-    let tds = {
-        let td_sel = cache.add_and_get_selector("td");
-        el.select(&td_sel).collect::<Vec<_>>()
-    };
+    let td_sel = cache.add_and_get_selector("td");
+    let tds = el.select(&td_sel).collect::<Vec<_>>();
 
-    Ok(TntEntry {
+    let entry = TntEntry {
         id: i as u32,
         desc: extract_desc(&tds, cache)?,
         c: 1,
@@ -63,32 +64,30 @@ fn build_entry(el: &ElementRef, i: usize, cache: &SelectorCache) -> Result<TntEn
         seeders: 1,
         download_link: extract_torrent(&tds, cache)?,
         url: "".to_string(),
-    })
+    };
+
+    Ok(entry)
 }
 
 pub fn scrape(html_result: &str) -> ScrapeResult {
     let selector_cache = SelectorCache::new();
     let doc = Html::parse_document(html_result);
 
-    let res = {
-        let selector = selector_cache.add_and_get_selector("tr");
+    let selector = selector_cache.add_and_get_selector("tr");
+    let res = doc
+        .select(&selector)
+        .enumerate()
+        .skip(1)
+        .filter_map(|(i, el)| build_entry(&el, i, &selector_cache).ok())
+        .collect();
 
-        doc.select(&selector)
-            .enumerate()
-            .skip(1)
-            .filter_map(|(i, el)| build_entry(&el, i, &selector_cache).ok())
-            .collect()
-    };
-
-    let npages = {
-        let page_selector = selector_cache.add_and_get_selector(".total");
-
-        doc.select(&page_selector)
-            .nth(0)
-            .and_then(|e| e.value().attr("a"))
-            .and_then(|v| v.parse::<u8>().ok())
-            .unwrap_or(1)
-    };
+    let page_selector = selector_cache.add_and_get_selector(".total");
+    let npages = doc
+        .select(&page_selector)
+        .nth(0)
+        .and_then(|e| e.value().attr("a"))
+        .and_then(|v| v.parse::<u8>().ok())
+        .unwrap_or(1);
 
     Ok(TntResult::new(res, npages))
 }
