@@ -12,13 +12,13 @@ impl SelectorCache {
         }
     }
 
-    pub fn add_and_get_selector(&self, s: &str) -> Selector {
-        let o = s.to_owned();
+    pub fn add_and_get_selector<S: Into<String>>(&self, s: S) -> Selector {
+        let owned = s.into();
 
         self.cache
             .borrow_mut()
-            .entry(o)
-            .or_insert_with(|| Selector::parse(s).unwrap())
+            .entry(owned.clone())
+            .or_insert_with(|| Selector::parse(&owned).unwrap())
             .clone()
     }
 }

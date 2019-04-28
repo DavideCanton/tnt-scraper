@@ -69,8 +69,7 @@ fn build_entry(el: &ElementRef, i: usize, cache: &SelectorCache) -> Result<TntEn
     Ok(entry)
 }
 
-pub fn scrape(html_result: &str) -> ScrapeResult {
-    let selector_cache = SelectorCache::new();
+pub fn scrape(html_result: &str, selector_cache: &mut SelectorCache) -> ScrapeResult {
     let doc = Html::parse_document(html_result);
 
     let selector = selector_cache.add_and_get_selector("tr");
@@ -78,7 +77,7 @@ pub fn scrape(html_result: &str) -> ScrapeResult {
         .select(&selector)
         .enumerate()
         .skip(1)
-        .filter_map(|(i, el)| build_entry(&el, i, &selector_cache).ok())
+        .filter_map(|(i, el)| build_entry(&el, i, selector_cache).ok())
         .collect();
 
     let page_selector = selector_cache.add_and_get_selector(".total");

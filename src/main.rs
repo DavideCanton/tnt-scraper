@@ -1,7 +1,7 @@
 extern crate tnt_scraper_lib;
 
 use std::{io, io::prelude::*};
-use tnt_scraper_lib::{download_file, extract_results, RequestData, TntCategory, TntResult};
+use tnt_scraper_lib::{RequestData, RequestManager, TntCategory, TntResult};
 
 fn print_values(results: &TntResult, page: u8) {
     println!("Pagina corrente: [{}]/[{}]", page, results.npages);
@@ -115,10 +115,10 @@ fn want_download() -> bool {
     val == "s"
 }
 
-fn download_loop(v: &TntResult) {
+fn download_loop(mgr: &RequestManager, v: &TntResult) {
     while want_download() {
         if let Some(index) = ask_index() {
-            match download_file(&v.entries[index as usize]) {
+            match mgr.download_file(&v.entries[index as usize]) {
                 Ok(_) => println!("Download completato!"),
                 Err(e) => eprintln!("{:?}", e),
             }
@@ -126,16 +126,16 @@ fn download_loop(v: &TntResult) {
     }
 }
 
-fn start_scrape(query: &str, category: u8, page: u8) -> Option<u8> {
+fn start_scrape(mgr: &mut RequestManager, query: &str, category: u8, page: u8) -> Option<u8> {
     let data = RequestData::new(query, category, page);
 
-    let results = extract_results(&data);
+    let results = mgr.extract_results(&data);
 
     match results {
         Ok(v) => {
             print_values(&v, page);
             if v.entries.len() > 0 {
-                download_loop(&v);
+                download_loop(&mgr, &v);
                 Some(ask_page(v.npages))
             } else {
                 None
@@ -166,10 +166,11 @@ fn main() {
         .unwrap();
 
     let page = args.value_of("pages").unwrap().parse::<u8>().unwrap();
+    let mut manager = RequestManager::new();
 
     let mut current_page = page;
 
-    while let Some(c) = start_scrape(&query, category, current_page) {
+    while let Some(c) = start_scrape(&mut manager, &query, category, current_page) {
         current_page = c;
     }
 }

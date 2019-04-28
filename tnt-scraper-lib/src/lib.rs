@@ -3,6 +3,7 @@ mod selector_cache;
 mod tnt_scraper;
 
 use dirs::home_dir;
+use selector_cache::SelectorCache;
 use std::{
     collections::HashSet,
     fmt::{Display, Formatter, Result as FResult},
@@ -143,15 +144,27 @@ impl RequestData {
     }
 }
 
-pub fn extract_results(query_data: &RequestData) -> ScrapeResult {
-    let html_result = downloader::request_content(URL, &query_data)?;
-    let entries = tnt_scraper::scrape(&html_result)?;
-
-    Ok(entries)
+pub struct RequestManager {
+    cache: SelectorCache,
 }
 
-pub fn download_file(entry: &TntEntry) -> Result<()> {
-    let mut path = home_dir().unwrap();
-    path.push("Downloads");
-    downloader::download_file(&path, &entry.download_link)
+impl RequestManager {
+    pub fn new() -> Self {
+        RequestManager {
+            cache: SelectorCache::new(),
+        }
+    }
+
+    pub fn extract_results(&mut self, query_data: &RequestData) -> ScrapeResult {
+        let html_result = downloader::request_content(URL, &query_data)?;
+        let entries = tnt_scraper::scrape(&html_result, &mut self.cache)?;
+
+        Ok(entries)
+    }
+
+    pub fn download_file(&self, entry: &TntEntry) -> Result<()> {
+        let mut path = home_dir().unwrap();
+        path.push("Downloads");
+        downloader::download_file(&path, &entry.download_link)
+    }
 }
